@@ -48,4 +48,14 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+
+	t.Run("purge logic", func(t *testing.T) {
+		l := NewList()
+		for i := range 5 {
+			l.PushBack(i)
+		}
+		require.Equal(t, 5, l.Len())
+		l.RemoveAll()
+		require.Equal(t, 0, l.Len())
+	})
 }

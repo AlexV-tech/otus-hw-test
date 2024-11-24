@@ -49,8 +49,74 @@ func TestCache(t *testing.T) {
 		require.Nil(t, val)
 	})
 
+	t.Run("check expel logic when going over capacity", func(t *testing.T) {
+		c := NewCache(3)
+		for i := range 7 {
+			key := Key(strconv.Itoa(i))
+			wasInCache := c.Set(key, i)
+			require.False(t, wasInCache)
+		}
+
+		for i := range 4 {
+			key := Key(strconv.Itoa(i))
+			_, ok := c.Get(key)
+			require.False(t, ok)
+		}
+	})
+
+	t.Run("check expel logic when items have been swapped", func(t *testing.T) {
+		c := NewCache(3)
+		for i := range 3 {
+			key := Key(strconv.Itoa(i))
+			wasInCache := c.Set(key, i)
+			require.False(t, wasInCache)
+		}
+
+		val, ok := c.Get("2")
+		require.True(t, ok)
+		require.Equal(t, 2, val)
+
+		val, ok = c.Get("3")
+		require.False(t, ok)
+		require.Equal(t, nil, val)
+
+		val, ok = c.Get("0")
+		require.True(t, ok)
+		require.Equal(t, 0, val)
+
+		wasInCache := c.Set("10", 10)
+		require.False(t, wasInCache)
+
+		_, ok = c.Get("0")
+		require.True(t, ok)
+
+		_, ok = c.Get("2")
+		require.True(t, ok)
+
+		_, ok = c.Get("1")
+		require.False(t, ok)
+
+		_, ok = c.Get("10")
+		require.True(t, ok)
+	})
+
+	// Check whether Clear func removes all elements
+
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		c := NewCache(3)
+		for i := range 3 {
+			key := Key(strconv.Itoa(i))
+			wasInCache := c.Set(key, i)
+			require.False(t, wasInCache)
+		}
+
+		c.Clear()
+
+		for i := range 3 {
+			key := Key(strconv.Itoa(i))
+			_, ok := c.Get(key)
+			require.False(t, ok)
+		}
 	})
 }
 
