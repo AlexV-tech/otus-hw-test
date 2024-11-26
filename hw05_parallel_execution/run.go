@@ -34,7 +34,10 @@ func Run(tasks []Task, n, m int) error {
 		go func() {
 			for {
 				// Verify if errors counter exceeds the limit already.
-				if errCtrl.cnt >= m && m > 0 {
+				errCtrl.mu.Lock()
+				errCntr := errCtrl.cnt
+				errCtrl.mu.Unlock()
+				if errCntr >= m && m > 0 {
 					// Drain data in channel, otherwise we'll be unable to close it later.
 					for {
 						_, ok := <-ch
