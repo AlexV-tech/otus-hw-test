@@ -8,23 +8,33 @@ type Cache interface {
 	Clear()
 }
 
+
+type CacheItem struct {
+	Value *ListItem
+	Index *ListItem
+}
+
 type lruCache struct {
 	capacity int
 	queue    List
-	items    map[Key]*ListItem
+	idxQueue List
+	items    map[Key]*CacheItem
 }
 
 func NewCache(capacity int) Cache {
 	return &lruCache{
 		capacity: capacity,
 		queue:    NewList(),
-		items:    make(map[Key]*ListItem, capacity),
+		idxQueue: NewList(),
+		items:    make(map[Key]*CacheItem, capacity),
 	}
 }
 
 func (lc *lruCache) Set(key Key, value interface{}) bool {
 	_, ok := lc.items[key]
-	lc.items[key] = lc.queue.PushFront(value)
+	vl := lc.queue.PushFront(value)
+	idx := lc.idxQueue.PushFront(key)
+	lc.items[key] = &CacheItem{Value: vl, Index: idx}
 	lc.checkCapacity()
 	return ok
 }
@@ -34,26 +44,28 @@ func (lc *lruCache) Get(key Key) (interface{}, bool) {
 	if !ok {
 		return nil, false
 	}
-	lc.queue.MoveToFront(itm)
+	lc.queue.MoveToFront(itm.Value)
+	lc.idxQueue.MoveToFront(itm.Index)
 	lc.checkCapacity()
-	return itm.Value, true
+	return itm.Value.Value, true
 }
 
 func (lc *lruCache) Clear() {
 	lc.queue.RemoveAll()
-	lc.items = make(map[Key]*ListItem, lc.capacity)
+	lc.idxQueue.RemoveAll()
+	lc.items = make(map[Key]*CacheItem, lc.capacity)
 }
 
 func (lc *lruCache) checkCapacity() {
 	if lc.queue.Len() <= lc.capacity {
 		return
 	}
-	bck := lc.queue.Back()
-	for k, v := range lc.items {
-		if v == bck {
-			delete(lc.items, k)
-			break
-		}
-	}
-	lc.queue.Remove(bck)
+	lastIdxNode := lc.idxQueue.Back()
+	lastIdxKey := lastIdxNode.Value
+	lastItem := lc.items[lastIdxKey.(Key)]
+	vl := lastItem.Value
+	idx := lastItem.Index
+	lc.queue.Remove(vl)
+	lc.idxQueue.Remove(idx)
+	delete(lc.items, lastIdxKey.(Key))
 }
