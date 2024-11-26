@@ -1,0 +1,25 @@
+# For some reason golangci-lint complained about depguard with following messages:
+#
+# cache_test.go:9:2: import 'github.com/stretchr/testify/require' is not allowed from list 'Main' (depguard)
+#        "github.com/stretchr/testify/require"
+#        ^
+# list_test.go:6:2: import 'github.com/stretchr/testify/require' is not allowed from list 'Main' (depguard)
+#        "github.com/stretchr/testify/require"
+#
+# There is no way to circumvent testify/require package import,
+# therefore this warning has been suppressed via settings below.
+#
+# Of course I've checked version of installed linter, it matches the one listed in the homework description:
+#
+# $ golangci-lint.exe --version
+# golangci-lint has version 1.57.2 built with go1.22.1 from 77a8601a on 2024-03-28T19:01:11Z
+
+linters-settings:
+  depguard:
+    rules:
+      main:
+        list-mode: lax
+        files:
+          - "!**/*_test.go"
+        allow:
+          - github.com/stretchr/testify/require
